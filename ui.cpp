@@ -1,23 +1,37 @@
-﻿#define _CRT_SECURE_NO_WARNINGS
-#include "ui.h"
-#include "karta.h"
+﻿// ui.cpp
+#define _CRT_SECURE_NO_WARNINGS
+#define NOMINMAX
+
+#include <windows.h>        // обязательно вызываем первым!
 #include <iostream>
 #include <cstring>
+#include <string>
+#include <limits>
+#include "ui.h"
+#include "karta.h"
+
 using namespace std;
 
 // Вспомогательные функции из karta.cpp
 extern const char* znachToStr(int z);
 extern const char* mastToSym(char m);
 
+void moyaPauza() {
+    cout << Color::yellow << "\n\tДля продолжения нажмите Enter... " << Color::reset;
+    cin.ignore(numeric_limits<streamsize>::max(), '\n'); // очищаем буфер
+    cin.get(); // ждём один символ (Enter)
+}
+
+// Отрисовка карты
 void pokazatKartu(const karta& k, bool zakryta) {
     if (zakryta) {
-        cout << "\t+---------+\n";
+        cout << "\t" << Color::gray << " +---------+\n";
         cout << "\t|??       |\n";
         cout << "\t|         |\n";
         cout << "\t|   ???   |\n";
         cout << "\t|         |\n";
         cout << "\t|       ??|\n";
-        cout << "\t+---------+\n";
+        cout << "\t+---------+" << Color::reset << "\n";
         return;
     }
 
@@ -142,52 +156,47 @@ void pokazatStol(karta stol[], int otkr) {
     cout << "\n\n";
 }
 
-// Остальные функции (меню, правила, конец игры) — без изменений
-// Просто оставь их как есть в своём файле
-
-
-// Главное меню
-int pokazatGlavnoeMenyu() {
-    system("cls");
-    cout << "\n\t=============================================\n";
-    cout << "\t          ПОКЕР: ТЕХАССКИЙ ХОЛДЕМ  \n";
-    cout << "\t=============================================\n\n";
-    cout << "\t1. Начать новую игру\n";
-    cout << "\t2. Загрузить сохранение\n";
-    cout << "\t3. Достижения\n";
-    cout << "\t4. Правила игры\n";
-    cout << "\t5. Выход\n";
-    cout << "\n\tВаш выбор: ";
-
-    int vybor;
-    while (!(cin >> vybor) || vybor < 1 || vybor > 5) {
-        cin.clear();
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
-        cout << "\n\tНеверный выбор. Введите число от 1 до 5: ";
-    }
-    return vybor;
-}
-
-// Правила
 void pokazatPravila() {
     system("cls");
-    cout << "\n\t=============================================\n";
-    cout << "\t               ПРАВИЛА ИГРЫ\n";
-    cout << "\t=============================================\n\n";
-    cout << "\tТехасский Холдем — самая популярная разновидность покера.\n";
-    cout << "\tУ каждого игрока 2 закрытые карты. На стол выкладываются 5 общих.\n";
-    cout << "\tЦель — собрать лучшую комбинацию из 5 карт (используя свои и общие).\n";
-    cout << "\tСтавки делаются по кругу. Можно: пасовать, уравнять, повысить или пойти ALL-IN.\n";
-    cout << "\n\tКомбинации (от слабой к сильной):\n";
-    cout << "\t- Старшая карта\n\t- Пара\n\t- Две пары\n\t- Тройка\n\t- Стрит\n\t- Флеш\n\t- Фулл-хаус\n\t- Каре\n\t- Стрит-флеш\n\t- Роял-флеш\n";
-    cout << "\n\tУдачи за игровым столом!\n";
-    system("pause");
+    cout << "\n\t   " << Color::green << "==========================================================\n";
+    cout << "\t                       ПРАВИЛА ИГРЫ\n";
+    cout << "\t   ==========================================================" << Color::reset << "\n";
+    cout << "\n";
+
+    cout << "\t   " << Color::yellow << "Техасский Холдем" << Color::reset << " — самая популярная разновидность покера.\n\n";
+
+    cout << "\t   У вас на руках 2 " << Color::gray << "закрытые карты." << Color::reset << "\n";
+    cout << "\t   На стол выкладываются 5 общих карт \n";
+    cout << "\t   (сначала три (флоп), затем ещё одна (тёрн) и последняя (ривер)).\n";
+    cout << "\t   Ваша цель — собрать лучшую комбинацию из 5 карт,\n";
+    cout << "\t   используя любые из своих и общих.\n\n";
+
+    cout << "\t   Ставки делаются по кругу. Вы можете:\n";
+    cout << "\t   [0] — сдаться (пас),\n";
+    cout << "\t   [x] — уравнять ставку (колл),\n";
+    cout << "\t   [>x] — повысить (рейз),\n";
+    cout << "\t   [ALL-IN] — поставить все фишки.\n\n";
+
+    cout << "\t   Комбинации (от сильной к слабой):\n";
+    cout << "\t   1. Роял-флеш (10-J-Q-K-A в одной масти) - это сильнейшая!\n";
+    cout << "\t   2. Стрит-флеш (стрит в одной масти)\n";
+    cout << "\t   3. Каре (четыре одинаковых)\n";
+    cout << "\t   4. Фулл-хаус (тройка + пара)\n";
+    cout << "\t   5. Флеш (одна масть)\n";
+    cout << "\t   6. Стрит (5 подряд)\n";
+    cout << "\t   7. Тройка\n";
+    cout << "\t   8. Две пары\n";
+    cout << "\t   9. Пара\n";
+    cout << "\t  10. Старшая карта\n\n";
+    cout << "\t " << Color::green << "Удачи за игровым столом!" << Color::reset << "\n";
+    moyaPauza();
 }
 
-// Конец игры
 void konetsIgry() {
     system("cls");
-    cout << "\n\tСпасибо за игру!\n";
-    cout << "\tДо новых встреч за покерным столом!\n\n";
-    system("pause");
+    cout << "\n\t" << Color::red << "==================================================" << Color::reset << "\n";
+    cout << "\t              " << Color::green << "СПАСИБО ЗА ИГРУ!" << Color::reset << "\n";
+    cout << "\t" << Color::red << "==================================================" << Color::reset << "\n\n";
+
+    cout << "\t   До новых встреч за покерным столом!\n\n\n\n\n";
 }

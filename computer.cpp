@@ -1,70 +1,67 @@
 // computer.cpp
-#define _CRT_SECURE_NO_WARNINGS
+#include <cstdlib>
 #include "computer.h"
 #include "kombinacii.h"
-#include <cstdlib>
+
 using namespace std;
 
-int reshenieComputera(int fichkiComp, int minStavka, karta rukaKaz[2], karta stol[5], int etap) {
-    // Если игрок сдался — компьютер не ставит
-    if (minStavka == -1) return 0;
+// etap: 0=префлоп, 1=флоп, 2=тёрн, 3=ривер.
+// fichkiIgroka — текущий баланс игрока (сколько он может добавить)
+int reshenieComputera(int fichkiComp, int minStavka, karta rukaKaz[2], karta stol[5], int etap, int fichkiIgroka) {
+    if (minStavka == -1)
+        return 0; // Игрок сдался
 
-    // Оцениваем силу руки
     RezultatKombinacii rez = naitiLuchshuyuKombinaciyu(rukaKaz, stol);
     int uroven = rez.tip;
-
-    // Вероятность блефа (5%)
     bool blef = (rand() % 100 < 15);
-
-    // Минимальная ставка — это то, что нужно уравнять
     int stavka = minStavka;
 
-    // Логика по этапам
-    if (etap == 0) { // Префлоп
+    // Максимальная ставка, которую может сделать компьютер:
+    // он не может заставить игрока поставить больше, чем тот имеет
+    int maxDopStavka = minStavka + fichkiIgroka; // игрок может добавить максимум fichkiIgroka
+
+    if (etap == 0) {
         if (uroven >= 1 || blef) {
-            // Есть пара или блеф — можно колл/повысить
             if (uroven >= 2 || blef) {
                 stavka = minStavka + rand() % 10;
             }
         }
         else {
-            // Слабая рука — фолд при высокой ставке
             if (minStavka > 10) return 0;
         }
     }
-    else if (etap == 1) { // Флоп
-        if (uroven >= 3 || blef) { // Тройка и выше или блеф
+    else if (etap == 1) {
+        if (uroven >= 3 || blef) {
             stavka = minStavka + rand() % 20;
         }
-        else if (uroven >= 1) { // Пара или две
-            // Коллируем или немного повышаем
+        else if (uroven >= 1) {
             if (rand() % 2 == 0) {
                 stavka = minStavka + rand() % 10;
             }
         }
         else {
-            // Ничего нет — фолд при ставке > 1/3 фишек
             if (minStavka > fichkiComp / 3) return 0;
         }
     }
-    else if (etap == 2 || etap == 3) { // Тёрн / Ривер
-        if (uroven >= 4 || blef) { // Стрит и выше или блеф
+    else if (etap == 2 || etap == 3) {
+        if (uroven >= 4 || blef) {
             stavka = minStavka + rand() % 30;
         }
-        else if (uroven >= 2) { // Две пары и выше
+        else if (uroven >= 2) {
             stavka = minStavka + rand() % 15;
         }
-        else if (uroven == 1) { // Пара
+        else if (uroven == 1) {
             if (minStavka > fichkiComp / 2) return 0;
         }
         else {
-            return 0; // Фолд
+            return 0;
         }
     }
 
     // Ограничения
     if (stavka < minStavka) stavka = minStavka;
     if (stavka > fichkiComp) stavka = fichkiComp;
+    if (stavka > maxDopStavka) stavka = maxDopStavka; //  ГЛАВНОЕ ИЗМЕНЕНИЕ
 
     return stavka;
 }

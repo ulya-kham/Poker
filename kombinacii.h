@@ -1,6 +1,5 @@
 // kombinacii.h
-#ifndef KOMBINACII_H
-#define KOMBINACII_H
+#pragma once
 
 #include "karta.h"
 
@@ -15,5 +14,3 @@ RezultatKombinacii naitiLuchshuyuKombinaciyu(karta ruka[2], karta stol[5]);
 bool vseKartiUnikalny(karta rukaIgr[2], karta rukaKaz[2], karta stol[5]);
 const char* opisatLuchshuyuRuku(karta ruka[2], karta stol[5]);
 int sravnitRuki(karta rukaIgr[2], karta rukaKaz[2], karta stol[5]);
-
-#endif // KOMBINACII_H

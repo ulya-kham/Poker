@@ -1,5 +1,6 @@
-#ifndef STATS_H
-#define STATS_H
+//stats.h
+#pragma once
+
 
 // Загружает статистику из файла
 void zagruzitStatistiku();
@@ -14,6 +15,9 @@ void obnovitStatistiku(bool pobeda, int summa);
 
 // Выводит статистику в консоль
 void pokazatStatistiku();
+
 // Указать, для какого игрока вести статистику
 void ustanovitIgrokaDlyaStatistiki(const char* imya);
-#endif // STATS_H
+
+// Достижения: загружает из save_ИМЯ.txt
+void pokazatDostizheniyaIzFila(const char* imyaIgroka);

@@ -1,9 +1,11 @@
 // kombinacii.cpp
 #define _CRT_SECURE_NO_WARNINGS
-#include "kombinacii.h"
+
 #include <iostream>
 #include <cstring>
 #include <algorithm>
+#include "kombinacii.h"
+
 using namespace std;
 
 bool sravnitKarty(const karta& a, const karta& b) {
@@ -141,8 +143,7 @@ RezultatKombinacii opredelitKombinaciyu(karta komb[5]) {
     return rez;
 }
 
-// ÎÑÍÎÂÍÛÅ ÔÓÍÊÖÈÈ (îáúÿâëåíû â .h)
-
+// ÎÑÍÎÂÍÛÅ ÔÓÍÊÖÈÈ (îíè îáúÿâëåíû â .h)
 RezultatKombinacii naitiLuchshuyuKombinaciyu(karta ruka[2], karta stol[5]) {
     karta vse[7];
     int n = 0;

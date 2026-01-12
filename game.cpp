@@ -1,17 +1,22 @@
 // game.cpp
 #define _CRT_SECURE_NO_WARNINGS
 #define NOMINMAX
+
+#include <iostream>
+#include <algorithm>
+#include <fstream>
+#include <string>
+#include <ctime>
+#include <limits>
 #include "game.h"
 #include "ui.h"
 #include "karta.h"
 #include "kombinacii.h"
 #include "input.h"
 #include "computer.h"
-#include <iostream>
-#include <algorithm>
-#include <fstream>
+#include "profile.h"
+#include "stats.h"
 
-#include <string>
 using namespace std;
 
 const int START_FICHI = 100;
@@ -22,21 +27,30 @@ const int POSLEDNIY_SHANS = 10;
 
 // Структура для достижений
 struct Dostizheniya {
-    bool novichok = false;          // 1
-    bool udachlivyi = false;        // 2
-    bool bankrotSpasitel = false;   // 3
-    bool korolKombinaciy = false;   // 4
-    bool millioner = false;         // 5
-    int podryadPobed = 0;           // счётчик побед подряд
+    bool novichok = false;
+    bool udachlivyi = false;
+    bool bankrotSpasitel = false;
+    bool korolKombinaciy = false;
+    bool millioner = false;
+    int podryadPobed = 0;
 };
 
-// Сохранение игры + достижений
-bool sohranitIgru(int fichkiIgroka, int dolg, int fichkiComp, bool poslednyShansIsPolzovan, const Dostizheniya& d) {
-    ofstream file("poker_save.txt");
+// Сохранение игры для конкретного игрока
+bool sohranitIgru(const char* imyaIgroka, int fichkiIgroka, int dolg, int fichkiComp, bool poslednyShansIsPolzovan, const Dostizheniya& d) {
+    char imyaFila[100];
+    poluchitImyaFilaSohraneniya(imyaIgroka, imyaFila);
+
+    ofstream file(imyaFila);
     if (!file.is_open()) {
-        cout << "\n\tОшибка: не удалось сохранить игру.\n";
+        cout << "\n\t" << Color::red << "Ошибка: не удалось сохранить игру." << Color::reset << "\n";
         return false;
     }
+
+    time_t now = time(0);
+    char dataVremya[30];
+    strftime(dataVremya, sizeof(dataVremya), "%Y-%m-%d %H:%M:%S", localtime(&now));
+    file << "posledny_vhod: " << dataVremya << "\n\n";
+
     file << fichkiIgroka << "\n";
     file << dolg << "\n";
     file << fichkiComp << "\n";
@@ -47,167 +61,243 @@ bool sohranitIgru(int fichkiIgroka, int dolg, int fichkiComp, bool poslednyShans
     file << d.korolKombinaciy << "\n";
     file << d.millioner << "\n";
     file << d.podryadPobed;
+
     file.close();
-    cout << "\n\tИгра и достижения сохранены!\n";
+    cout << "\n\t" << Color::green << "Игра и достижения сохранены для \"" << imyaIgroka << "\"!" << Color::reset << "\n";
     return true;
 }
 
-// Загрузка игры + достижений
-bool zagruzitIgru(int& fichkiIgroka, int& dolg, int& fichkiComp, bool& poslednyShansIsPolzovan, Dostizheniya& d) {
-    ifstream file("poker_save.txt");
+// Загрузка игры для конкретного игрока
+bool zagruzitIgru(const char* imyaIgroka, int& fichkiIgroka, int& dolg, int& fichkiComp, bool& poslednyShansIsPolzovan, Dostizheniya& d) {
+    char imyaFila[100];
+    poluchitImyaFilaSohraneniya(imyaIgroka, imyaFila);
+
+    ifstream file(imyaFila);
     if (!file.is_open()) return false;
+
+    string line;
+    getline(file, line); // дата
+    getline(file, line); // пустая строка
+
     file >> fichkiIgroka >> dolg >> fichkiComp >> poslednyShansIsPolzovan;
-    file.ignore(1000, '\n'); // пропустить пустую строку
+    file.ignore(1000, '\n');
     file >> d.novichok >> d.udachlivyi >> d.bankrotSpasitel >> d.korolKombinaciy >> d.millioner >> d.podryadPobed;
     file.close();
     return true;
 }
 
-// Вывод достижений
+// Вывод достижений с цветным оформлением и категориями
 void pokazatDostizheniya(const Dostizheniya& d) {
-    cout << "\n\t?? ВАШИ ДОСТИЖЕНИЯ:\n";
-    cout << "\t[ " << (d.novichok ? "?" : " ") << " ] Новичок — сыграть первую руку\n";
-    cout << "\t[ " << (d.udachlivyi ? "?" : " ") << " ] Удачливый — 5 побед подряд\n";
-    cout << "\t[ " << (d.bankrotSpasitel ? "?" : " ") << " ] Банкрот-спаситель — погасить долг 50 фишек\n";
-    cout << "\t[ " << (d.korolKombinaciy ? "?" : " ") << " ] Король комбинаций — собрать каре или выше\n";
-    cout << "\t[ " << (d.millioner ? "?" : " ") << " ] Миллионер — накопить 1000+ фишек\n";
+    system("cls");
+
+    cout << "\n\t" << Color::blue << "=============================================\n";
+    cout << "\t\t\tДОСТИЖЕНИЯ\n";
+    cout << "\t=============================================" << Color::reset << "\n\n";
+
+    cout << Color::cyan << "\tОБЫКНОВЕННЫЕ:\n" << Color::reset;
+    cout << "\t  [ " << (d.novichok ? "+" : " ") << " ] Новичок — сыграть первую руку\n";
+    cout << "\t  [ " << (d.udachlivyi ? "+" : " ") << " ] Удачливый — 5 побед подряд\n";
+    cout << "\t  [ " << (d.bankrotSpasitel ? "+" : " ") << " ] Банкрот-спаситель — погасить долг 50 фишек\n\n";
+
+    cout << Color::green << "\tНЕСТАНДАРТНЫЕ:\n" << Color::reset;
+    cout << "\t  [ " << (d.korolKombinaciy ? "+" : " ") << " ] Король комбинаций — собрать каре или выше\n\n";
+
+    cout << Color::blue << "\tРЕДКИЕ:\n" << Color::reset;
+    cout << "\t  [ " << (d.millioner ? "+" : " ") << " ] Миллионер — накопить 1000+ фишек\n\n";
+
+    moyaPauza();
 }
 
 // Проверка и разблокировка достижений
 void proveritDostizheniya(Dostizheniya& d, int fichkiIgroka, int dolg, int resultatRuki, const string& kombinaciya) {
-    // 1. Новичок
     if (!d.novichok) {
         d.novichok = true;
-        cout << "\n\t?? НОВОЕ ДОСТИЖЕНИЕ: Новичок!\n";
+        cout << "\n\t" << Color::blue << "НОВОЕ ДОСТИЖЕНИЕ: Новичок!" << Color::reset << "\n";
     }
 
-    // 2. Удачливый
     if (resultatRuki == 1) {
         d.podryadPobed++;
         if (d.podryadPobed >= 5 && !d.udachlivyi) {
             d.udachlivyi = true;
-            cout << "\n\t?? НОВОЕ ДОСТИЖЕНИЕ: Удачливый!\n";
+            cout << "\n\t" << Color::blue << "НОВОЕ ДОСТИЖЕНИЕ: Удачливый!" << Color::reset << "\n";
         }
     }
     else {
         d.podryadPobed = 0;
     }
 
-    // 4. Король комбинаций
     if (!d.korolKombinaciy) {
         if (kombinaciya.find("Каре") != string::npos ||
             kombinaciya.find("Стрит-флеш") != string::npos ||
             kombinaciya.find("Роял-флеш") != string::npos) {
             d.korolKombinaciy = true;
-            cout << "\n\t?? НОВОЕ ДОСТИЖЕНИЕ: Король комбинаций!\n";
+            cout << "\n\t" << Color::blue << "НОВОЕ ДОСТИЖЕНИЕ: Король комбинаций!" << Color::reset << "\n";
         }
     }
 
-    // 5. Миллионер
     if (fichkiIgroka >= 1000 && !d.millioner) {
         d.millioner = true;
-        cout << "\n\t?? НОВОЕ ДОСТИЖЕНИЕ: Миллионер!\n";
+        cout << "\n\t" << Color::blue << "НОВОЕ ДОСТИЖЕНИЕ: Миллионер!" << Color::reset << "\n";
     }
+}
+
+// Функция для отображения шоудауна
+int pokazatShoudaun(karta rukaIgr[], karta rukaKaz[], karta stol[], int& bank, int& fichkiIgroka, int& fichkiComp) {
+    cout << "\n\t" << Color::cyan << "*****************************************\n";
+    cout << "\t*          Ш О У Д А У Н                *\n";
+    cout << "\t*****************************************" << Color::reset << "\n\n";
+
+    cout << "\t" << Color::cyan << "Ваши карты:\n";
+    pokazatRuku(rukaIgr, 2);
+    cout << "\n\t" << Color::reset << "Карты компьютера:\n";
+    pokazatRuku(rukaKaz, 2);
+    cout << "\n\t" << Color::cyan << "Карты на столе:\n";
+    pokazatStol(stol, 5);
+
+    int resultatRuki = sravnitRuki(rukaIgr, rukaKaz, stol);
+    string kombinaciyaIgroka = string(opisatLuchshuyuRuku(rukaIgr, stol));
+
+    if (resultatRuki == 1) {
+        cout << "\n\t" << Color::green << "Вы выиграли банк: " << bank << " фишек!" << Color::reset << "\n";
+        fichkiIgroka += bank;
+    }
+    else if (resultatRuki == -1) {
+        cout << "\n\t" << Color::red << "Компьютер выиграл банк: " << bank << " фишек." << Color::reset << "\n";
+        fichkiComp += bank;
+    }
+    else {
+        cout << "\n\t" << Color::yellow << "Ничья! Банк разделён." << Color::reset << "\n";
+        fichkiIgroka += bank / 2;
+        fichkiComp += bank / 2;
+        resultatRuki = 0;
+    }
+
+    if (resultatRuki == 1) {
+        obnovitStatistiku(true, bank);
+    }
+    else if (resultatRuki == -1) {
+        obnovitStatistiku(false, bank);
+    }
+
+    return resultatRuki;
 }
 
 bool vzyatKredit(int& fichki, int& dolg) {
     if (dolg > 0) {
-        cout << "\n\tУ вас уже есть долг перед банком (" << dolg << " фишек). Сначала погасите его!\n";
+        cout << "\n\t" << Color::red << "У вас уже есть долг перед банком (" << dolg << " фишек). Сначала погасите его!" << Color::reset << "\n";
         return false;
     }
     if (fichki > 10) {
-        cout << "\n\tКредит доступен только при балансе ? 10 фишек.\n";
+        cout << "\n\t" << Color::yellow << "Кредит доступен только при балансе ? 10 фишек." << Color::reset << "\n";
         return false;
     }
-    cout << "\n\tБанк предлагает кредит до " << MAX_DOLG << " фишек.\n";
-    cout << "\tСколько хотите взять? (1–" << MAX_DOLG << ", 0 — отказ): ";
+    cout << "\n\t" << Color::yellow << "Банк предлагает кредит до " << MAX_DOLG << " фишек.\n";
+    cout << "\tСколько хотите взять? (" << Color::green << "1–" << MAX_DOLG << "" << Color::yellow << ", " << Color::red << "0 — отказ):" << Color::reset << " ";
     int summa = bezopasnyVvodChisla(0, MAX_DOLG);
     if (summa == 0) {
-        cout << "\n\tВы отказались от кредита.\n";
+        cout << "\n\t" << Color::yellow << "Вы отказались от кредита." << Color::reset << "\n";
         return false;
     }
     fichki += summa;
     dolg = summa;
-    cout << "\n\tВы взяли кредит на " << summa << " фишек. Долг: " << dolg << " фишек.\n";
+    cout << "\n\t" << Color::yellow << "Вы взяли кредит на " << summa << " фишек. " << Color::red << "Долг: " << dolg << " фишек." << Color::reset << "\n";
     return true;
 }
 
 // ОСНОВНАЯ ФУНКЦИЯ — принимает флаг загрузки
-void zapustitIgru(bool zagruzitIzFila) {
+void zapustitIgru(bool zagruzitIzFila, const char* imyaIgroka) {
     system("cls");
+    cout << "\n\t" << Color::cyan << "Запуск новой игры..." << Color::reset << "\n\n";
 
-    // Инициализация по умолчанию (новая игра)
     int fichkiIgroka = START_FICHI;
     int fichkiComp = 1000;
     int dolg = 0;
     bool poslednyShansIsPolzovan = false;
-    Dostizheniya dostizh;
+    Dostizheniya dostizh = {};
 
-    // Если нужно загрузить — читаем из файла
+    // Загружаем достижения даже при новой игре
+    char imyaFila[100];
+    poluchitImyaFilaSohraneniya(imyaIgroka, imyaFila);
+    ifstream fileDost(imyaFila);
+    if (fileDost.is_open()) {
+        string line;
+        getline(fileDost, line);
+        getline(fileDost, line);
+        for (int i = 0; i < 4; i++) {
+            getline(fileDost, line);
+        }
+        getline(fileDost, line);
+        fileDost >> dostizh.novichok
+            >> dostizh.udachlivyi
+            >> dostizh.bankrotSpasitel
+            >> dostizh.korolKombinaciy
+            >> dostizh.millioner
+            >> dostizh.podryadPobed;
+        fileDost.close();
+    }
+
     if (zagruzitIzFila) {
-        ifstream testFile("poker_save.txt");
+        ifstream testFile(imyaFila);
         if (testFile.good()) {
-            if (zagruzitIgru(fichkiIgroka, dolg, fichkiComp, poslednyShansIsPolzovan, dostizh)) {
-                cout << "\n\t? Сохранение успешно загружено!\n";
+            if (zagruzitIgru(imyaIgroka, fichkiIgroka, dolg, fichkiComp, poslednyShansIsPolzovan, dostizh)) {
+                cout << "\n\t" << Color::green << "Сохранение успешно загружено!" << Color::reset << "\n";
                 pokazatDostizheniya(dostizh);
-                system("pause");
             }
             else {
-                cout << "\n\t? Ошибка загрузки. Начинаем новую игру.\n";
-                system("pause");
-                // остаются значения по умолчанию
+                cout << "\n\t" << Color::red << "Ошибка загрузки. " << Color::green << "Начинаем новую игру." << Color::reset << "\n";
+                moyaPauza();
             }
         }
         else {
-            cout << "\n\t? Файл сохранения не найден. Начинаем новую игру.\n";
-            system("pause");
+            cout << "\n\t" << Color::red << "Сохранение для \"" << imyaIgroka << "\" не найдено. " << Color::green << "Начинаем новую игру." << Color::reset << "\n";
+            moyaPauza();
         }
         testFile.close();
     }
 
     // Основной игровой цикл
     while (fichkiIgroka >= 0 && fichkiComp > 0) {
-        // Проверка на банкротство с долгом
+        // ... (логика банкротства и кредита без изменений) ...
         if (fichkiIgroka <= 0 && dolg > 0) {
             if (!poslednyShansIsPolzovan) {
-                cout << "\n\tУ вас закончились фишки, но остался долг (" << dolg << " фишек)!\n";
-                cout << "\tБанк даёт вам ПОСЛЕДНИЙ ШАНС: " << POSLEDNIY_SHANS << " фишек.\n";
-                cout << "\tЕсли проиграете эту руку — игра окончена.\n";
-                cout << "\tПринять последний шанс? (1 — да, 0 — нет): ";
+                cout << "\n\t" << Color::red << "У вас закончились фишки, но остался долг (" << dolg << " фишек)!" << Color::reset << "\n";
+                cout << "\t" << Color::yellow << "Банк даёт вам " << Color::green << "ПОСЛЕДНИЙ ШАНС: " << POSLEDNIY_SHANS << " фишек." << Color::reset << "\n\n";
+                cout << "\t" << Color::red << "Если проиграете эту руку — игра окончена!" << Color::reset << "\n";
+                cout << "\tПринять последний шанс? (" << Color::green << "1 — да" << Color::reset << ", " << Color::red << "0 — нет" << Color::reset << "): ";
                 int vybor = bezopasnyVvodChisla(0, 1);
                 if (vybor == 1) {
                     fichkiIgroka = POSLEDNIY_SHANS;
                     dolg += POSLEDNIY_SHANS;
                     poslednyShansIsPolzovan = true;
-                    cout << "\n\tВы получили " << POSLEDNIY_SHANS << " фишек. Новый долг: " << dolg << " фишек.\n\n";
+                    cout << "\n\t" << Color::green << "Вы получили " << POSLEDNIY_SHANS << " фишек. " << Color::red << "Новый долг: " << dolg << " фишек." << Color::reset << "\n\n";
                 }
                 else {
-                    cout << "\n\tВы отказались от последнего шанса.\n";
-                    cout << "\tИгра окончена. Банк забирает всё.\n";
-                    system("pause");
+                    cout << "\n\t" << Color::red << "Вы отказались от последнего шанса." << Color::reset << "\n";
+                    cout << "\t" << Color::red << "Игра окончена. Банк забирает всё." << Color::reset << "\n";
+                    moyaPauza();
                     return;
                 }
             }
             else {
-                cout << "\n\tУ вас нет фишек, долг не погашен, и последний шанс использован.\n";
-                cout << "\tВы объявлены банкротом. Игра окончена.\n";
-                system("pause");
+                cout << "\n\t" << Color::red << "У вас нет фишек, долг перед банком не погашен, и последний шанс использован." << Color::reset << "\n";
+                cout << "\t" << Color::red << "Вы объявлены банкротом. Игра окончена." << Color::reset << "\n";
+                moyaPauza();
                 return;
             }
         }
 
         if (fichkiIgroka <= 10 && dolg == 0) {
-            cout << "\n\tУ вас мало фишек (" << fichkiIgroka << "). Хотите взять кредит?\n";
-            cout << "\t(1 — да, 0 — нет): ";
+            cout << "\n\t" << Color::yellow << "У вас мало фишек (" << fichkiIgroka << "). Хотите взять кредит?" << Color::reset << "\n";
+            cout << "\t(" << Color::green << "1 — да" << Color::reset << ", " << Color::red << "0 — нет" << Color::reset << "): ";
             int vybor = bezopasnyVvodChisla(0, 1);
             if (vybor == 1) {
                 vzyatKredit(fichkiIgroka, dolg);
             }
         }
 
-        cout << "\n\t~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
-        cout << "\t~           Н О В А Я   Р У К А             ~\n";
-        cout << "\t~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n\n";
+        cout << "\n\t" << Color::yellow << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~\n";
+        cout << "\t~           " << Color::green << "Н О В А Я   Р У К А             " << Color::yellow << "~\n";
+        cout << "\t" << Color::yellow << "~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~" << Color::reset << "\n\n";
 
         karta koloda[KOL_KART];
         sozdatKolodu(koloda);
@@ -225,7 +315,6 @@ void zapustitIgru(bool zagruzitIzFila) {
             stol[i].mast = 'X';
         }
 
-        // Блайнды
         int bank = MALYI_BLIND + BOLSHOI_BLIND;
         if (fichkiIgroka < MALYI_BLIND) {
             bank = fichkiIgroka + BOLSHOI_BLIND;
@@ -239,26 +328,27 @@ void zapustitIgru(bool zagruzitIzFila) {
 
         cout << "\tМалый блайнд: " << MALYI_BLIND << " (от вас)\n";
         cout << "\tБольшой блайнд: " << BOLSHOI_BLIND << " (от компьютера)\n";
-        cout << "\tВ банке: " << bank << " фишек\n\n";
+        cout << "\t" << Color::cyan << "В банке: " << bank << " фишек" << Color::reset << "\n\n";
 
         pokazatRuku(rukaIgr, 2);
 
         bool allIn = false;
         bool rukaZavershena = false;
+        int resultatRuki = 0; // ? добавлено
 
         // Префлоп
-        cout << "\n\t--- П Р Е Ф Л О П ---\n";
+        cout << "\n\t" << Color::cyan << "--- П Р Е Ф Л О П ---" << Color::reset << "\n";
         int raznicaDoUrafnivaniya = BOLSHOI_BLIND - MALYI_BLIND;
         int stavkaIgr = 0;
 
         if (fichkiIgroka > 0) {
-            cout << "\n\tВаш счёт: " << fichkiIgroka << " фишек";
-            if (dolg > 0) cout << " (долг: " << dolg << ")";
+            cout << "\n\t" << Color::green << "Ваш счёт: " << fichkiIgroka << " фишек" << Color::reset;
+            if (dolg > 0) cout << " " << Color::red << "(долг: " << dolg << ")" << Color::reset;
             cout << "\n";
 
             stavkaIgr = sdelatStavku(fichkiIgroka, raznicaDoUrafnivaniya);
             if (stavkaIgr == -1) {
-                cout << "\n\tВы сдались. Компьютер забирает банк: " << bank << " фишек.\n";
+                cout << "\n\t" << Color::red << "Вы сдались. " << Color::yellow << "Компьютер забирает банк: " << bank << " фишек.\n" << Color::reset;
                 fichkiComp += bank;
                 rukaZavershena = true;
             }
@@ -275,21 +365,24 @@ void zapustitIgru(bool zagruzitIzFila) {
                 rukaZavershena = true;
                 allIn = true;
                 for (int i = 0; i < 5; i++) stol[i] = koloda[poz++];
-                cout << "\n\tВСЕ-ИН! Все карты открыты:\n";
+                cout << "\n\t" << Color::cyan << "ALL-IN! Все карты открыты:" << Color::reset << "\n";
                 pokazatStol(stol, 5);
+
+                // === ШОУДАУН ПРИ ALL-IN ===
+                resultatRuki = pokazatShoudaun(rukaIgr, rukaKaz, stol, bank, fichkiIgroka, fichkiComp);
             }
             else {
                 fichkiIgroka -= stavkaIgr;
                 bank += stavkaIgr;
 
-                int stavkaComp = reshenieComputera(fichkiComp, stavkaIgr, rukaKaz, stol, 0);
+                int stavkaComp = reshenieComputera(fichkiComp, stavkaIgr, rukaKaz, stol, 0, fichkiIgroka);
                 if (stavkaComp > 0 && stavkaComp < stavkaIgr) {
                     stavkaComp = stavkaIgr;
                 }
 
                 if (stavkaComp == 0) {
-                    cout << "\n\tКомпьютер сбрасывает карты.\n";
-                    cout << "\n\tВы выиграли банк: " << bank << " фишек!\n";
+                    cout << "\n\t" << Color::green << "Компьютер сбрасывает карты.\n";
+                    cout << "\n\tВы выиграли банк: " << bank << " фишек!" << Color::reset << "\n";
                     fichkiIgroka += bank;
                     rukaZavershena = true;
                 }
@@ -299,16 +392,16 @@ void zapustitIgru(bool zagruzitIzFila) {
                     bank += stavkaComp;
                 }
                 else {
-                    cout << "\n\tКомпьютер повышает ставку до " << stavkaComp << " фишек!\n";
+                    cout << "\n\t" << Color::yellow << "Компьютер повышает ставку до " << stavkaComp << " фишек!\n" << Color::reset;
                     int dopStavka = stavkaComp - stavkaIgr;
 
                     cout << "\n\tВаш счёт: " << fichkiIgroka << " фишек";
-                    if (dolg > 0) cout << " (долг: " << dolg << ")";
+                    if (dolg > 0) cout << " " << Color::red << "(долг: " << dolg << ")" << Color::reset;
                     cout << "\n";
 
                     int otvetIgroka = sdelatStavku(fichkiIgroka, dopStavka);
                     if (otvetIgroka == -1) {
-                        cout << "\n\tВы сдались. Компьютер забирает банк.\n";
+                        cout << "\n\t" << Color::red << "Вы сдались. Компьютер забирает банк." << Color::reset << "\n";
                         fichkiComp += bank;
                         rukaZavershena = true;
                     }
@@ -325,8 +418,11 @@ void zapustitIgru(bool zagruzitIzFila) {
                             for (int i = 0; i < 5; i++) {
                                 if (stol[i].znach == 0) stol[i] = koloda[poz++];
                             }
-                            cout << "\n\tВСЕ-ИН! Все карты открыты:\n";
+                            cout << "\n\t" << Color::cyan << "ALL-IN! Все карты открыты:" << Color::reset << "\n";
                             pokazatStol(stol, 5);
+
+                            // === ШОУДАУН ПРИ ALL-IN ===
+                            resultatRuki = pokazatShoudaun(rukaIgr, rukaKaz, stol, bank, fichkiIgroka, fichkiComp);
                         }
                         else {
                             fichkiIgroka -= otvetIgroka;
@@ -337,7 +433,7 @@ void zapustitIgru(bool zagruzitIzFila) {
                                 int compDobavka = min(raznica, fichkiComp);
                                 fichkiComp -= compDobavka;
                                 bank += compDobavka;
-                                cout << "\n\tКомпьютер уравнивает ваше повышение: +" << compDobavka << " фишек.\n";
+                                cout << "\n\t" << Color::cyan << "Компьютер уравнивает ваше повышение: +" << compDobavka << " фишек." << Color::reset << "\n";
                             }
                             else {
                                 fichkiComp -= dopStavka;
@@ -352,28 +448,28 @@ void zapustitIgru(bool zagruzitIzFila) {
                     for (int i = 0; i < 5; i++) {
                         if (stol[i].znach == 0) stol[i] = koloda[poz++];
                     }
-                    cout << "\n\tВСЕ-ИН! Все карты открыты:\n";
+                    cout << "\n\t" << Color::cyan << "ALL-IN! Все карты открыты:" << Color::reset << "\n";
                     pokazatStol(stol, 5);
+
+                    // === ШОУДАУН ПРИ ALL-IN ===
+                    resultatRuki = pokazatShoudaun(rukaIgr, rukaKaz, stol, bank, fichkiIgroka, fichkiComp);
                 }
             }
         }
 
-        // === ФЛОП, ТЁРН, РИВЕР — без изменений (сокращено для краткости) ===
-        // ... (весь код как в предыдущей версии) ...
-
         // Флоп
         if (!rukaZavershena && !allIn) {
             for (int i = 0; i < 3; i++) stol[i] = koloda[poz++];
-            cout << "\n\t--- Ф Л О П ---\n";
+            cout << "\n\t" << Color::cyan << "--- Ф Л О П ---\n" << Color::reset;
             pokazatStol(stol, 3);
 
             cout << "\n\tВаш счёт: " << fichkiIgroka << " фишек";
-            if (dolg > 0) cout << " (долг: " << dolg << ")";
+            if (dolg > 0) cout << " " << Color::red << "(долг: " << dolg << ")" << Color::reset << "";
             cout << "\n";
 
             int stavkaIgr = sdelatStavku(fichkiIgroka, 0);
             if (stavkaIgr == -1) {
-                cout << "\n\tВы сдались. Компьютер забирает банк.\n";
+                cout << "\n\t" << Color::red << "Вы сдались. Компьютер забирает банк." << Color::reset << "\n";
                 fichkiComp += bank;
                 rukaZavershena = true;
             }
@@ -382,39 +478,39 @@ void zapustitIgru(bool zagruzitIzFila) {
                 fichkiIgroka -= stavkaIgr;
                 bank += stavkaIgr;
 
-                int stavkaComp = reshenieComputera(fichkiComp, stavkaIgr, rukaKaz, stol, 1);
+                int stavkaComp = reshenieComputera(fichkiComp, stavkaIgr, rukaKaz, stol, 1, fichkiIgroka);
                 if (stavkaComp > 0 && stavkaComp < stavkaIgr) {
                     stavkaComp = stavkaIgr;
                 }
 
                 if (stavkaComp == 0) {
-                    cout << "\n\tКомпьютер сбрасывает карты.\n";
-                    cout << "\n\tВы выиграли банк: " << bank << " фишек!\n";
+                    cout << "\n\t" << Color::green << "Компьютер сбрасывает карты.\n";
+                    cout << "\n\tВы выиграли банк: " << bank << " фишек!" << Color::reset << "\n";
                     fichkiIgroka += bank;
                     rukaZavershena = true;
                 }
                 else if (stavkaComp == stavkaIgr) {
-                    cout << "\n\tКомпьютер поддерживает вашу ставку: " << stavkaComp << " фишек.\n";
+                    cout << "\n\t" << Color::cyan << "Компьютер поддерживает вашу ставку: " << stavkaComp << " фишек." << Color::reset << "\n";
                     fichkiComp -= stavkaComp;
                     bank += stavkaComp;
                 }
                 else {
-                    cout << "\n\tКомпьютер повышает ставку до " << stavkaComp << " фишек!\n";
+                    cout << "\n\t" << Color::cyan << "Компьютер повышает ставку до " << stavkaComp << " фишек!" << Color::reset << "\n";
                     int dopStavka = stavkaComp - stavkaIgr;
 
                     cout << "\n\tВаш счёт: " << fichkiIgroka << " фишек";
-                    if (dolg > 0) cout << " (долг: " << dolg << ")";
+                    if (dolg > 0) cout << " " << Color::red << "(долг: " << dolg << ")" << Color::reset;
                     cout << "\n";
 
                     int otvetIgroka = sdelatStavku(fichkiIgroka, dopStavka);
                     if (otvetIgroka == -1) {
-                        cout << "\n\tВы сдались. Компьютер забирает банк.\n";
+                        cout << "\n\t" << Color::red << "Вы сдались. Компьютер забирает банк." << Color::reset << "\n";
                         fichkiComp += bank;
                         rukaZavershena = true;
                     }
                     else {
                         if (otvetIgroka < dopStavka) {
-                            cout << "\n\tВы идёте ALL-IN на " << otvetIgroka << " фишек!\n";
+                            cout << "\n\t" << Color::cyan << "Вы идёте ALL-IN на " << otvetIgroka << " фишек!" << Color::reset << "\n";
                             fichkiIgroka -= otvetIgroka;
                             bank += otvetIgroka;
                             int compDobavka = dopStavka - otvetIgroka;
@@ -423,8 +519,11 @@ void zapustitIgru(bool zagruzitIzFila) {
                             rukaZavershena = true;
                             allIn = true;
                             for (int i = 3; i < 5; i++) stol[i] = koloda[poz++];
-                            cout << "\n\tВСЕ-ИН! Все карты открыты:\n";
+                            cout << "\n\t" << Color::cyan << "ALL-IN! Все карты открыты:" << Color::reset << "\n";
                             pokazatStol(stol, 5);
+
+                            // === ШОУДАУН ПРИ ALL-IN ===
+                            resultatRuki = pokazatShoudaun(rukaIgr, rukaKaz, stol, bank, fichkiIgroka, fichkiComp);
                         }
                         else {
                             fichkiIgroka -= otvetIgroka;
@@ -435,7 +534,7 @@ void zapustitIgru(bool zagruzitIzFila) {
                                 int compDobavka = min(raznica, fichkiComp);
                                 fichkiComp -= compDobavka;
                                 bank += compDobavka;
-                                cout << "\n\tКомпьютер уравнивает ваше повышение: +" << compDobavka << " фишек.\n";
+                                cout << "\n\t" << Color::cyan << "Компьютер уравнивает ваше повышение: +" << compDobavka << " фишек." << Color::reset << "\n";
                             }
                             else {
                                 fichkiComp -= dopStavka;
@@ -448,8 +547,11 @@ void zapustitIgru(bool zagruzitIzFila) {
                 if (!allIn && (fichkiIgroka == 0 || fichkiComp == 0)) {
                     allIn = true;
                     for (int i = 3; i < 5; i++) stol[i] = koloda[poz++];
-                    cout << "\n\tВСЕ-ИН! Все карты открыты:\n";
+                    cout << "\n\t" << Color::cyan << "ALL-IN! Все карты открыты:" << Color::reset << "\n";
                     pokazatStol(stol, 5);
+
+                    // === ШОУДАУН ПРИ ALL-IN ===
+                    resultatRuki = pokazatShoudaun(rukaIgr, rukaKaz, stol, bank, fichkiIgroka, fichkiComp);
                 }
             }
         }
@@ -457,16 +559,16 @@ void zapustitIgru(bool zagruzitIzFila) {
         // Тёрн
         if (!rukaZavershena && !allIn) {
             stol[3] = koloda[poz++];
-            cout << "\n\t--- Т Ё Р Н ---\n";
+            cout << "\n\t" << Color::yellow << "--- Т Ё Р Н ---" << Color::reset << "\n";
             pokazatStol(stol, 4);
 
             cout << "\n\tВаш счёт: " << fichkiIgroka << " фишек";
-            if (dolg > 0) cout << " (долг: " << dolg << ")";
+            if (dolg > 0) cout << " " << Color::red << "(долг: " << dolg << ")" << Color::reset;
             cout << "\n";
 
             int stavkaIgr = sdelatStavku(fichkiIgroka, 0);
             if (stavkaIgr == -1) {
-                cout << "\n\tВы сдались. Компьютер забирает банк.\n";
+                cout << "\n\t" << Color::red << "Вы сдались. Компьютер забирает банк." << Color::reset << "\n";
                 fichkiComp += bank;
                 rukaZavershena = true;
             }
@@ -475,39 +577,39 @@ void zapustitIgru(bool zagruzitIzFila) {
                 fichkiIgroka -= stavkaIgr;
                 bank += stavkaIgr;
 
-                int stavkaComp = reshenieComputera(fichkiComp, stavkaIgr, rukaKaz, stol, 2);
+                int stavkaComp = reshenieComputera(fichkiComp, stavkaIgr, rukaKaz, stol, 2, fichkiIgroka);
                 if (stavkaComp > 0 && stavkaComp < stavkaIgr) {
                     stavkaComp = stavkaIgr;
                 }
 
                 if (stavkaComp == 0) {
-                    cout << "\n\tКомпьютер сбрасывает карты.\n";
-                    cout << "\n\tВы выиграли банк: " << bank << " фишек!\n";
+                    cout << "\n\t" << Color::green << "Компьютер сбрасывает карты.\n";
+                    cout << "\n\tВы выиграли банк: " << bank << " фишек!" << Color::reset << "\n";
                     fichkiIgroka += bank;
                     rukaZavershena = true;
                 }
                 else if (stavkaComp == stavkaIgr) {
-                    cout << "\n\tКомпьютер поддерживает вашу ставку: " << stavkaComp << " фишек.\n";
+                    cout << "\n\t" << Color::cyan << "Компьютер поддерживает вашу ставку: " << stavkaComp << " фишек." << Color::reset << "\n";
                     fichkiComp -= stavkaComp;
                     bank += stavkaComp;
                 }
                 else {
-                    cout << "\n\tКомпьютер повышает ставку до " << stavkaComp << " фишек!\n";
+                    cout << "\n\t" << Color::cyan << "Компьютер повышает ставку до " << stavkaComp << " фишек!" << Color::reset << "\n";
                     int dopStavka = stavkaComp - stavkaIgr;
 
                     cout << "\n\tВаш счёт: " << fichkiIgroka << " фишек";
-                    if (dolg > 0) cout << " (долг: " << dolg << ")";
+                    if (dolg > 0) cout << " " << Color::red << "(долг: " << dolg << ")" << Color::reset;
                     cout << "\n";
 
                     int otvetIgroka = sdelatStavku(fichkiIgroka, dopStavka);
                     if (otvetIgroka == -1) {
-                        cout << "\n\tВы сдались. Компьютер забирает банк.\n";
+                        cout << "\n\t" << Color::red << "Вы сдались. Компьютер забирает банк." << Color::reset << "\n";
                         fichkiComp += bank;
                         rukaZavershena = true;
                     }
                     else {
                         if (otvetIgroka < dopStavka) {
-                            cout << "\n\tВы идёте ALL-IN на " << otvetIgroka << " фишек!\n";
+                            cout << "\n\t" << Color::cyan << "Вы идёте ALL-IN на " << otvetIgroka << " фишек!" << Color::reset << "\n";
                             fichkiIgroka -= otvetIgroka;
                             bank += otvetIgroka;
                             int compDobavka = dopStavka - otvetIgroka;
@@ -516,8 +618,11 @@ void zapustitIgru(bool zagruzitIzFila) {
                             rukaZavershena = true;
                             allIn = true;
                             stol[4] = koloda[poz++];
-                            cout << "\n\tВСЕ-ИН! Все карты открыты:\n";
+                            cout << "\n\t" << Color::cyan << "ALL-IN! Все карты открыты:" << Color::reset << "\n";
                             pokazatStol(stol, 5);
+
+                            // === ШОУДАУН ПРИ ALL-IN ===
+                            resultatRuki = pokazatShoudaun(rukaIgr, rukaKaz, stol, bank, fichkiIgroka, fichkiComp);
                         }
                         else {
                             fichkiIgroka -= otvetIgroka;
@@ -528,7 +633,7 @@ void zapustitIgru(bool zagruzitIzFila) {
                                 int compDobavka = min(raznica, fichkiComp);
                                 fichkiComp -= compDobavka;
                                 bank += compDobavka;
-                                cout << "\n\tКомпьютер уравнивает ваше повышение: +" << compDobavka << " фишек.\n";
+                                cout << "\n\t" << Color::cyan << "Компьютер уравнивает ваше повышение: +" << compDobavka << " фишек." << Color::reset << "\n";
                             }
                             else {
                                 fichkiComp -= dopStavka;
@@ -541,8 +646,11 @@ void zapustitIgru(bool zagruzitIzFila) {
                 if (!allIn && (fichkiIgroka == 0 || fichkiComp == 0)) {
                     allIn = true;
                     stol[4] = koloda[poz++];
-                    cout << "\n\tВСЕ-ИН! Все карты открыты:\n";
+                    cout << "\n\t" << Color::cyan << "ALL-IN! Все карты открыты:" << Color::reset << "\n";
                     pokazatStol(stol, 5);
+
+                    // === ШОУДАУН ПРИ ALL-IN ===
+                    resultatRuki = pokazatShoudaun(rukaIgr, rukaKaz, stol, bank, fichkiIgroka, fichkiComp);
                 }
             }
         }
@@ -550,16 +658,16 @@ void zapustitIgru(bool zagruzitIzFila) {
         // Ривер
         if (!rukaZavershena && !allIn) {
             stol[4] = koloda[poz++];
-            cout << "\n\t--- Р И В Е Р ---\n";
+            cout << "\n\t" << Color::cyan << "--- Р И В Е Р ---" << Color::reset << "\n";
             pokazatStol(stol, 5);
 
             cout << "\n\tВаш счёт: " << fichkiIgroka << " фишек";
-            if (dolg > 0) cout << " (долг: " << dolg << ")";
+            if (dolg > 0) cout << " " << Color::red << "(долг: " << dolg << ")" << Color::reset << "";
             cout << "\n";
 
             int stavkaIgr = sdelatStavku(fichkiIgroka, 0);
             if (stavkaIgr == -1) {
-                cout << "\n\tВы сдались. Компьютер забирает банк.\n";
+                cout << "\n\t" << Color::red << "Вы сдались. Компьютер забирает банк." << Color::reset << "\n";
                 fichkiComp += bank;
                 rukaZavershena = true;
             }
@@ -568,39 +676,39 @@ void zapustitIgru(bool zagruzitIzFila) {
                 fichkiIgroka -= stavkaIgr;
                 bank += stavkaIgr;
 
-                int stavkaComp = reshenieComputera(fichkiComp, stavkaIgr, rukaKaz, stol, 3);
+                int stavkaComp = reshenieComputera(fichkiComp, stavkaIgr, rukaKaz, stol, 3, fichkiIgroka);
                 if (stavkaComp > 0 && stavkaComp < stavkaIgr) {
                     stavkaComp = stavkaIgr;
                 }
 
                 if (stavkaComp == 0) {
-                    cout << "\n\tКомпьютер сбрасывает карты.\n";
-                    cout << "\n\tВы выиграли банк: " << bank << " фишек!\n";
+                    cout << "\n\t" << Color::green << "Компьютер сбрасывает карты.\n";
+                    cout << "\n\tВы выиграли банк: " << bank << " фишек!" << Color::reset << "\n";
                     fichkiIgroka += bank;
                     rukaZavershena = true;
                 }
                 else if (stavkaComp == stavkaIgr) {
-                    cout << "\n\tКомпьютер поддерживает вашу ставку: " << stavkaComp << " фишек.\n";
+                    cout << "\n\t" << Color::cyan << "Компьютер поддерживает вашу ставку: " << stavkaComp << " фишек." << Color::reset << "\n";
                     fichkiComp -= stavkaComp;
                     bank += stavkaComp;
                 }
                 else {
-                    cout << "\n\tКомпьютер повышает ставку до " << stavkaComp << " фишек!\n";
+                    cout << "\n\t" << Color::cyan << "Компьютер повышает ставку до " << stavkaComp << " фишек!" << Color::reset << "\n";
                     int dopStavka = stavkaComp - stavkaIgr;
 
                     cout << "\n\tВаш счёт: " << fichkiIgroka << " фишек";
-                    if (dolg > 0) cout << " (долг: " << dolg << ")";
+                    if (dolg > 0) cout << " " << Color::red << "(долг: " << dolg << ")" << Color::reset << "";
                     cout << "\n";
 
                     int otvetIgroka = sdelatStavku(fichkiIgroka, dopStavka);
                     if (otvetIgroka == -1) {
-                        cout << "\n\tВы сдались. Компьютер забирает банк.\n";
+                        cout << "\n\t" << Color::red << "Вы сдались. Компьютер забирает банк." << Color::reset << "\n";
                         fichkiComp += bank;
                         rukaZavershena = true;
                     }
                     else {
                         if (otvetIgroka < dopStavka) {
-                            cout << "\n\tВы идёте ALL-IN на " << otvetIgroka << " фишек!\n";
+                            cout << "\n\t" << Color::cyan << "Вы идёте ALL-IN на " << otvetIgroka << " фишек!" << Color::reset << "\n";
                             fichkiIgroka -= otvetIgroka;
                             bank += otvetIgroka;
                             int compDobavka = dopStavka - otvetIgroka;
@@ -608,8 +716,11 @@ void zapustitIgru(bool zagruzitIzFila) {
                             bank += compDobavka;
                             rukaZavershena = true;
                             allIn = true;
-                            cout << "\n\tВСЕ-ИН! Все карты открыты:\n";
+                            cout << "\n\t" << Color::cyan << "ALL-IN! Все карты открыты:" << Color::reset << "\n";
                             pokazatStol(stol, 5);
+
+                            // === ШОУДАУН ПРИ ALL-IN ===
+                            resultatRuki = pokazatShoudaun(rukaIgr, rukaKaz, stol, bank, fichkiIgroka, fichkiComp);
                         }
                         else {
                             fichkiIgroka -= otvetIgroka;
@@ -620,7 +731,7 @@ void zapustitIgru(bool zagruzitIzFila) {
                                 int compDobavka = min(raznica, fichkiComp);
                                 fichkiComp -= compDobavka;
                                 bank += compDobavka;
-                                cout << "\n\tКомпьютер уравнивает ваше повышение: +" << compDobavka << " фишек.\n";
+                                cout << "\n\t" << Color::cyan << "Компьютер уравнивает ваше повышение: +" << compDobavka << " фишек." << Color::reset << "\n";
                             }
                             else {
                                 fichkiComp -= dopStavka;
@@ -632,95 +743,55 @@ void zapustitIgru(bool zagruzitIzFila) {
             }
         }
 
-        // Шоудаун
-        string kombinaciyaIgroka = "";
-        int resultatRuki = 0;
-
+        // Обычный шоудаун (если не был ALL-IN)
         if (!rukaZavershena) {
-            cout << "\n\t*****************************************\n";
-            cout << "\t*          Ш О У Д А У Н                *\n";
-            cout << "\t*****************************************\n\n";
-
-            cout << "\tВаши карты:\n";
-            pokazatRuku(rukaIgr, 2);
-            cout << "\n\tКарты компьютера:\n";
-            pokazatRuku(rukaKaz, 2);
-            cout << "\n\tКарты на столе:\n";
-            pokazatStol(stol, 5);
-
-            resultatRuki = sravnitRuki(rukaIgr, rukaKaz, stol);
-            kombinaciyaIgroka = string(opisatLuchshuyuRuku(rukaIgr, stol));
-
-            if (resultatRuki == 1) {
-                cout << "\n\tВы выиграли банк: " << bank << " фишек!\n";
-                fichkiIgroka += bank;
-            }
-            else if (resultatRuki == -1) {
-                cout << "\n\tКомпьютер выиграл банк: " << bank << " фишек.\n";
-                fichkiComp += bank;
-            }
-            else {
-                cout << "\n\tНичья! Банк разделён.\n";
-                fichkiIgroka += bank / 2;
-                fichkiComp += bank / 2;
-                resultatRuki = 0;
-            }
+            resultatRuki = pokazatShoudaun(rukaIgr, rukaKaz, stol, bank, fichkiIgroka, fichkiComp);
         }
 
         // Проверка достижений
+        string kombinaciyaIgroka = string(opisatLuchshuyuRuku(rukaIgr, stol));
         proveritDostizheniya(dostizh, fichkiIgroka, dolg, resultatRuki, kombinaciyaIgroka);
 
-        // Вывод счёта
         cout << "\n\tВаш счёт: " << fichkiIgroka << " фишек";
-        if (dolg > 0) {
-            cout << " (долг: " << dolg << ")";
-        }
+        if (dolg > 0) cout << " " << Color::red << "(долг: " << dolg << ")" << Color::reset << "";
         cout << "\n\tСчёт компьютера: " << fichkiComp << " фишек\n\n";
 
         if (fichkiComp <= 0) {
-            cout << "\n\tКомпьютер обанкротился! Вы победили!\n";
-            system("pause");
+            cout << "\n\t" << Color::cyan << "Компьютер обанкротился! " << Color::green << "Вы победили!" << Color::reset << "\n";
+            moyaPauza();
             break;
         }
 
-        // Погашение долга
         if (dolg > 0 && fichkiIgroka > 0) {
-            cout << "\n\tХотите погасить часть долга? (1 — да, 0 — нет): ";
+            cout << "\n\tХотите погасить часть долга? (" << Color::green << "1 — да" << Color::reset << ", " << Color::red << "0 — нет" << Color::reset << "): ";
             if (bezopasnyVvodChisla(0, 1) == 1) {
                 int summa = min(fichkiIgroka, dolg);
                 int oldDolg = dolg;
                 fichkiIgroka -= summa;
                 dolg -= summa;
-                cout << "\n\tВы погасили " << summa << " фишек долга.\n";
+                cout << "\n\t" << Color::yellow << "Вы погасили " << summa << " фишек долга." << Color::reset << "\n";
                 if (dolg == 0) {
-                    cout << "\tДолг полностью погашен!\n";
+                    cout << "\t" << Color::green << "Долг полностью погашен!" << Color::reset << "\n";
                     poslednyShansIsPolzovan = false;
                     if (oldDolg == MAX_DOLG && !dostizh.bankrotSpasitel) {
                         dostizh.bankrotSpasitel = true;
-                        cout << "\n\t?? НОВОЕ ДОСТИЖЕНИЕ: Банкрот-спаситель!\n";
+                        cout << "\n\t " << Color::blue << "НОВОЕ ДОСТИЖЕНИЕ: Банкрот-спаситель!" << Color::reset << "\n";
                     }
                 }
                 else {
-                    cout << "\tОстаток долга: " << dolg << " фишек.\n";
+                    cout << "\t" << Color::yellow << "Остаток долга: " << dolg << " фишек." << Color::reset << "\n";
                 }
             }
         }
 
         // Меню выхода
-        cout << "\n\tВыберите действие:\n";
-        cout << "\t1 — Сыграть ещё\n";
-        cout << "\t2 — Сохранить и выйти\n";
-        cout << "\t3 — Показать достижения\n";
-        cout << "\t0 — Выйти без сохранения\n\t";
-        int prod = bezopasnyVvodChisla(0, 3);
-        if (prod == 3) {
-            pokazatDostizheniya(dostizh);
-            system("pause");
-            system("cls");
-            continue;
-        }
-        else if (prod == 2) {
-            sohranitIgru(fichkiIgroka, dolg, fichkiComp, poslednyShansIsPolzovan, dostizh);
+        cout << "\n\t" << Color::cyan << "--- Выберите действие: ---" << Color::reset << "\n";
+        cout << "\t1 — " << Color::green << "Сыграть ещё" << Color::reset << "\n";
+        cout << "\t2 — " << Color::yellow << "Сохранить и выйти" << Color::reset << "\n";
+        cout << "\t0 — " << Color::gray << "Выйти без сохранения" << Color::reset << "\n\t";
+        int prod = bezopasnyVvodChisla(0, 2);
+        if (prod == 2) {
+            sohranitIgru(imyaIgroka, fichkiIgroka, dolg, fichkiComp, poslednyShansIsPolzovan, dostizh);
             break;
         }
         else if (prod == 0) {

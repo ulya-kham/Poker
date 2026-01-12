@@ -1,7 +1,8 @@
 // karta.cpp
-#include "karta.h"
 #include <cstdlib>
 #include <cstring>
+#include "karta.h"
+
 
 const char* znachToStr(int z) {
     switch (z) {

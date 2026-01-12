@@ -1,7 +1,5 @@
-#pragma once
 // karta.h
-#ifndef KARTA_H
-#define KARTA_H
+#pragma once
 
 const int KOL_KART = 52;
 
@@ -14,5 +12,3 @@ const char* znachToStr(int z);
 const char* mastToSym(char m);
 void sozdatKolodu(karta koloda[]);
 void tasovat(karta koloda[]);
-
-#endif

@@ -1,7 +1,5 @@
 // game.h
-#ifndef GAME_H
-#define GAME_H
+#pragma once
 
-void zapustitIgru(bool zagruzitIzFila);
+void zapustitIgru(bool zagruzitIzFila, const char* imyaIgroka);
 
-#endif

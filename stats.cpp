@@ -1,11 +1,14 @@
+// stats.cpp
 #define _CRT_SECURE_NO_WARNINGS
-#include "stats.h"
-#include "profile.h"  // ? для получения имени файла
+
 #include <iostream>
 #include <fstream>
 #include <string>
 #include "ui.h"
 #include <windows.h>
+#include "stats.h"
+#include "profile.h"
+
 using namespace std;
 
 struct Statistika {
@@ -72,7 +75,7 @@ void sohranitStatistiku() {
 
     ofstream file(imyaFila);
     if (!file.is_open()) {
-        cout << "\n\t??  Не удалось сохранить статистику.\n";
+        cout << "\n\t" << Color::red << " Не удалось сохранить статистику." << Color::reset << "\n";
         return;
     }
     file << "igry: " << stats.igry << "\n";
@@ -101,24 +104,84 @@ void obnovitStatistiku(bool pobeda, int summa) {
 
 void pokazatStatistiku() {
     system("cls");
-    cout << "\n\t=============================================\n";
-    cout << "\t                С Т А Т И С Т И К А\n";
-    cout << "\t               Игрок: " << imyaTekushchegoIgroka << "\n";
-    cout << "\t=============================================\n\n";
+    cout << "\n\t" << Color::cyan << "=============================================\n";
+    cout << "\t\t    С Т А Т И С Т И К А\n";
+    cout << "\t\t" << Color::green << "      Игрока \"" << imyaTekushchegoIgroka << "\" " << Color::reset << "\n";
+    cout << "\t" << Color::cyan << "=============================================" << Color::reset << "\n\n";
 
     if (stats.igry == 0) {
-        cout << "\tВы ещё не сыграли ни одной руки.\n\n";
+        cout << "\t" << Color::yellow << "Вы ещё не сыграли ни одной руки!" << Color::reset << "\n\n";
     }
     else {
         cout << "\tВсего сыграно рук:     " << stats.igry << "\n";
-        cout << "\tПобед:                 " << stats.pobedy << "\n";
-        cout << "\tПоражений:             " << stats.porazheniya << "\n";
-        cout << "\tСуммарный выигрыш:     " << stats.vyigrysh << " фишек\n";
-        cout << "\tСуммарный проигрыш:    " << stats.proigrish << " фишек\n";
+        cout << "\t" << Color::green << "Побед:                 " << stats.pobedy << "\n";
+        cout << "\t" << Color::red << "Поражений:             " << stats.porazheniya << "\n";
+        cout << "\t" << Color::yellow << "Суммарный выигрыш:     " << stats.vyigrysh << " фишек\n";
+        cout << "\t" << Color::red << "Суммарный проигрыш:    " << stats.proigrish << " фишек" << Color::reset << "\n";
 
         double winrate = (stats.igry > 0) ? (stats.pobedy * 100.0 / stats.igry) : 0.0;
         cout << "\tПроцент побед:         " << fixed << winrate << "%\n\n";
     }
+
+    moyaPauza();
+}
+
+// Достижения: загружает из save_ИМЯ.txt
+void pokazatDostizheniyaIzFila(const char* imyaIgroka) {
+    char imyaFila[100];
+    poluchitImyaFilaSohraneniya(imyaIgroka, imyaFila);
+
+    ifstream file(imyaFila);
+    if (!file.is_open()) {
+        system("cls");
+        cout << Color::blue << "\n\tДостижений" << Color::yellow << " пока нет. Сыграйте хотя бы одну руку!" << Color::reset << "\n";
+        moyaPauza();
+        return;
+    }
+
+    string line;
+    getline(file, line); // дата
+    getline(file, line); // пустая
+
+    for (int i = 0; i < 4; i++) {
+        if (!getline(file, line)) {
+            file.close();
+            system("cls");
+            cout << Color::yellow << "\n\tДостижений пока нет." << Color::reset << "\n";
+            moyaPauza();
+            return;
+        }
+    }
+    getline(file, line); // пустая строка перед достижениями
+
+    struct Dostizheniya {
+        bool novichok, udachlivyi, bankrotSpasitel, korolKombinaciy, millioner;
+        int podryadPobed;
+    } d;
+
+    file >> d.novichok >> d.udachlivyi >> d.bankrotSpasitel
+        >> d.korolKombinaciy >> d.millioner >> d.podryadPobed;
+    file.close();
+
+    system("cls");
+    cout << "\n\t" << Color::blue << "=============================================\n";
+    cout << "\t\t\tДОСТИЖЕНИЯ\n";
+    cout << "\t=============================================" << Color::reset << "\n\n";
+
+
+    // Обыкновенные
+    cout << Color::cyan << "\n\tОБЫКНОВЕННЫЕ:\n" << Color::reset;
+    cout << "\t  [ " << (d.novichok ? "+" : " ") << " ] Новичок — сыграть первую руку\n";
+    cout << "\t  [ " << (d.udachlivyi ? "+" : " ") << " ] Удачливый — 5 побед подряд\n";
+    cout << "\t  [ " << (d.bankrotSpasitel ? "+" : " ") << " ] Банкрот-спаситель — погасить долг\n";
+
+    // Нестандартные
+    cout << Color::green << "\n\tНЕСТАНДАРТНЫЕ:\n" << Color::reset;
+    cout << "\t  [ " << (d.korolKombinaciy ? "+" : " ") << " ] Король комбинаций — каре или выше\n";
+
+    // Редкие
+    cout << Color::blue << "\n\tРЕДКИЕ:\n" << Color::reset;
+    cout << "\t  [ " << (d.millioner ? "+" : " ") << " ] Миллионер — накопить 1000+ фишек\n";
 
     moyaPauza();
 }

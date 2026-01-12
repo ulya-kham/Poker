@@ -1,9 +1,12 @@
 // input.cpp
 #define _CRT_SECURE_NO_WARNINGS
 #define NOMINMAX
-#include "input.h"
+
 #include <iostream>
 #include <limits>
+#include "input.h"
+#include "ui.h"
+
 using namespace std;
 
 int bezopasnyVvodChisla(int minZnach, int maxZnach) {
@@ -13,7 +16,7 @@ int bezopasnyVvodChisla(int minZnach, int maxZnach) {
         if (cin.fail() || chislo < minZnach || chislo > maxZnach) {
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
-            cout << "\tОшибка! Введите число от " << minZnach << " до " << maxZnach << ": ";
+            cout << "\t" << Color::red << "Ошибка! " << Color::yellow << "Введите число от " << minZnach << " до " << maxZnach << ": " << Color::reset;
         }
         else {
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
@@ -38,7 +41,7 @@ int sdelatStavku(int fichki, int minStavka) {
         if (cin.fail()) {
             cin.clear();
             cin.ignore(numeric_limits<streamsize>::max(), '\n');
-            cout << "\n\tОшибка: введите число.\n";
+            cout << "\n\t" << Color::red << "Ошибка: введите число." << Color::reset << "\n";
             continue;
         }
 
@@ -48,7 +51,7 @@ int sdelatStavku(int fichki, int minStavka) {
         }
 
         if (stavka > fichki) {
-            cout << "\n\tУ вас только " << fichki << " фишек!\n";
+            cout << "\n\t" << Color::yellow << "У вас только " << fichki << " фишек!" << Color::reset << "\n";
             continue;
         }
 
