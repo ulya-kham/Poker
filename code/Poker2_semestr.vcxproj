@@ -21,8 +21,8 @@
   <PropertyGroup Label="Globals">
     <VCProjectVersion>18.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{220ea1a0-deca-4da1-bd31-808fa9c1bce2}</ProjectGuid>
-    <RootNamespace>Poker</RootNamespace>
+    <ProjectGuid>{a8ad7ba9-a4b0-474c-823a-9c425d11ce4a}</ProjectGuid>
+    <RootNamespace>Poker2semestr</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -127,23 +127,29 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="computer.cpp" />
-    <ClCompile Include="game.cpp" />
-    <ClCompile Include="input.cpp" />
-    <ClCompile Include="karta.cpp" />
-    <ClCompile Include="kombinacii.cpp" />
+    <ClCompile Include="AIPlayer.cpp" />
+    <ClCompile Include="Card.cpp" />
+    <ClCompile Include="ConsoleUI.cpp" />
+    <ClCompile Include="Deck.cpp" />
+    <ClCompile Include="GameEngine.cpp" />
+    <ClCompile Include="HandEvaluator.cpp" />
+    <ClCompile Include="InputValidator.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="stats.cpp" />
-    <ClCompile Include="ui.cpp" />
+    <ClCompile Include="Profile.cpp" />
+    <ClCompile Include="Statistics.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="computer.h" />
-    <ClInclude Include="game.h" />
-    <ClInclude Include="input.h" />
-    <ClInclude Include="karta.h" />
-    <ClInclude Include="kombinacii.h" />
-    <ClInclude Include="stats.h" />
-    <ClInclude Include="ui.h" />
+    <ClInclude Include="AIPlayer.h" />
+    <ClInclude Include="Card.h" />
+    <ClInclude Include="ConsoleUI.h" />
+    <ClInclude Include="CustomStack.h" />
+    <ClInclude Include="Deck.h" />
+    <ClInclude Include="Exceptions.h" />
+    <ClInclude Include="GameEngine.h" />
+    <ClInclude Include="HandEvaluator.h" />
+    <ClInclude Include="InputValidator.h" />
+    <ClInclude Include="Profile.h" />
+    <ClInclude Include="Statistics.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

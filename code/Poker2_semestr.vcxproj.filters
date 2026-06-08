@@ -18,48 +18,66 @@
     <ClCompile Include="main.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="ui.cpp">
+    <ClCompile Include="Card.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="karta.cpp">
+    <ClCompile Include="Deck.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="kombinacii.cpp">
+    <ClCompile Include="ConsoleUI.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="game.cpp">
+    <ClCompile Include="InputValidator.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="input.cpp">
+    <ClCompile Include="HandEvaluator.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="computer.cpp">
+    <ClCompile Include="GameEngine.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
-    <ClCompile Include="stats.cpp">
+    <ClCompile Include="AIPlayer.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="Profile.cpp">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="Statistics.cpp">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="ui.h">
+    <ClInclude Include="Card.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="karta.h">
+    <ClInclude Include="Deck.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="kombinacii.h">
+    <ClInclude Include="CustomStack.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="game.h">
+    <ClInclude Include="Exceptions.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="input.h">
+    <ClInclude Include="ConsoleUI.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="computer.h">
+    <ClInclude Include="InputValidator.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
-    <ClInclude Include="stats.h">
+    <ClInclude Include="HandEvaluator.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="GameEngine.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="AIPlayer.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Profile.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
+    <ClInclude Include="Statistics.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
   </ItemGroup>
